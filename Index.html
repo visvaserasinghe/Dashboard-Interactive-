@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProTrack — Executive Command Centre</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --rail:#0E1A2B;--rail-hover:#18283E;--rail-line:#23354F;
+  --canvas:#EDF0F4;--card:#FFFFFF;--line:#E3E8EF;--line-soft:#EEF1F5;
+  --ink:#0F1B2D;--muted:#697A92;--faint:#97A4B6;
+  --brand:#0E9E84;--brand-deep:#0B7E69;
+  --eng:#2563EB;--env:#16A34A;--soc:#D97706;--hyd:#0891B2;
+  --ok:#15A06B;--warn:#E08A00;--bad:#DC2D2D;--purple:#7C3AED;
+  --ok-bg:#E7F6EE;--warn-bg:#FCF1DC;--bad-bg:#FBE7E7;
+  --shadow:0 1px 2px rgba(15,27,45,.04),0 4px 14px rgba(15,27,45,.05);
+  --shadow-lg:0 12px 40px rgba(15,27,45,.16);--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum"}
+.num{font-family:'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.shell{display:flex;min-height:100vh}
+.rail{width:248px;flex-shrink:0;background:var(--rail);color:#C4D0E0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:20px 14px}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px 22px}
+.brand .mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--brand),#15C7A6);display:grid;place-items:center;color:#04130F;font-weight:700;font-size:19px;font-family:'Space Grotesk'}
+.brand b{color:#fff;font-size:18px;font-weight:600;letter-spacing:-.01em;font-family:'Space Grotesk'}
+.brand small{display:block;color:#6E83A0;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:6px;overflow-y:auto}
+.nav .eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#56698A;padding:14px 10px 6px}
+.nav button{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;color:#AEBCD0;font-size:13.5px;font-weight:500;width:100%;text-align:left;transition:.15s}
+.nav button svg{width:17px;height:17px;flex-shrink:0;opacity:.85}
+.nav button:hover{background:var(--rail-hover);color:#fff}
+.nav button.active{background:linear-gradient(90deg,rgba(14,158,132,.22),rgba(14,158,132,.04));color:#fff;box-shadow:inset 2px 0 0 var(--brand)}
+.nav button.active svg{color:var(--brand);opacity:1}
+.rail .who{margin-top:auto;border-top:1px solid var(--rail-line);padding-top:14px;display:flex;align-items:center;gap:10px}
+.rail .who .av{width:34px;height:34px;border-radius:50%;background:#1B6B5C;color:#9FF0DE;display:grid;place-items:center;font-weight:600;font-size:13px}
+.rail .who span{font-size:13px;color:#E6ECF4;font-weight:500;display:block}
+.rail .who small{font-size:11px;color:#6E83A0}
+.main{flex:1;min-width:0;padding:30px 40px 70px;max-width:1500px}
+.page-head{margin-bottom:24px}
+.page-head h1{font-family:'Space Grotesk';font-size:27px;font-weight:600;letter-spacing:-.02em}
+.page-head p{color:var(--muted);font-size:13.5px;margin-top:4px}
+.page-head .live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--brand-deep);background:var(--ok-bg);padding:3px 9px;border-radius:20px;font-weight:600;margin-left:10px;vertical-align:2px}
+.page-head .live i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);font-weight:500;margin-bottom:14px;transition:.15s}
+.back:hover{color:var(--brand-deep)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;margin-bottom:14px}
+.kpi .ic svg{width:18px;height:18px}
+.kpi .v{font-family:'Space Grotesk';font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+.kpi .trend{position:absolute;top:18px;right:18px;font-size:11.5px;font-weight:600;font-family:'Space Grotesk'}
+.up{color:var(--ok)}.down{color:var(--bad)}
+.grid{display:grid;gap:18px}.two{grid-template-columns:1fr 1fr}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card>header{display:flex;align-items:center;justify-content:space-between;padding:17px 20px;border-bottom:1px solid var(--line-soft);gap:10px}
+.card>header h2{font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px}
+.card>header h2 .dot{width:8px;height:8px;border-radius:3px}
+.card .sub{font-size:11.5px;color:var(--faint);font-weight:400;margin-left:2px}
+.linkbtn{font-size:12px;color:var(--brand-deep);font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.linkbtn:hover{text-decoration:underline}
+.body{padding:18px 20px}
+.eyb{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:9px}
+
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{border:1px solid var(--line);border-radius:11px;padding:14px;text-align:left;transition:.16s;position:relative}
+.tile:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--brand)}
+.tile .tv{font-family:'Space Grotesk';font-size:26px;font-weight:600;line-height:1}
+.tile .tl{font-size:11.5px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:6px}
+.tile .tl .pip{width:8px;height:8px;border-radius:50%}
+.tile .go{position:absolute;top:13px;right:13px;color:var(--faint);font-size:14px;transition:.15s}
+.tile:hover .go{color:var(--brand);transform:translateX(2px)}
+.tile.ok{background:linear-gradient(180deg,var(--ok-bg),#fff)}
+.tile.warn{background:linear-gradient(180deg,var(--warn-bg),#fff)}
+.tile.bad{background:linear-gradient(180deg,var(--bad-bg),#fff)}
+
+.funnel{display:flex;margin:6px 0 4px}
+.fstage{flex:1;position:relative;padding:13px 10px 13px 22px;background:var(--line-soft);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%,14px 50%);margin-left:-12px;transition:.16s;text-align:left}
+.fstage:first-child{margin-left:0;padding-left:14px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%)}
+.fstage:hover{filter:brightness(.97)}
+.fstage .fv{font-family:'Space Grotesk';font-size:22px;font-weight:600;line-height:1}
+.fstage .fl{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.25}
+.fstage.s1{background:#E3ECFB}.fstage.s2{background:#D8E9FA}.fstage.s3{background:#CDE7F4}.fstage.s4{background:#CDEFE3}
+.fstage.s4 .fv{color:var(--brand-deep)}
+.split{display:flex;gap:14px}.splitbar{flex:1}
+.splitbar .bar{height:30px;border-radius:8px;display:flex;overflow:hidden;background:var(--line-soft)}
+.splitbar .seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;font-family:'Space Grotesk';transition:.16s}
+.splitbar .seg:hover{filter:brightness(1.06)}
+.splitbar .cap{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
+
+.rfrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);margin-bottom:8px;transition:.15s;text-align:left;width:100%}
+.rfrow:hover{border-color:var(--brand);background:#F8FFFD;transform:translateX(2px)}
+.rfrow .rfic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;flex-shrink:0}
+.rfrow .rfic svg{width:16px;height:16px}
+.rfrow .rfmid{flex:1;min-width:0}
+.rfrow .rfmid b{font-size:13px;font-weight:600;display:block}
+.rfrow .rfmid small{font-size:11px;color:var(--muted)}
+.rfrow .rfct{font-family:'Space Grotesk';font-weight:600;font-size:16px}
+.rfrow .rfbar{height:5px;border-radius:3px;background:var(--line-soft);margin-top:5px;overflow:hidden}
+.rfrow .rfbar i{display:block;height:100%;border-radius:3px}
+.rfrow .go{color:var(--faint);font-size:15px}.rfrow:hover .go{color:var(--brand)}
+
+.disc-list{display:flex;flex-direction:column;gap:13px}
+.disc{display:flex;align-items:center;gap:13px}
+.disc .dname{width:170px;flex-shrink:0;font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:8px}
+.disc .dname .sw{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.disc .dtrack{flex:1;height:24px;border-radius:6px;background:var(--line-soft);display:flex;overflow:hidden}
+.disc .dtrack span{height:100%;transition:.16s}.disc .dtrack span:hover{filter:brightness(1.08)}
+.disc .dtot{width:30px;text-align:right;font-family:'Space Grotesk';font-weight:600;font-size:14px}
+
+.dl{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.dl:last-child{border-bottom:none}
+.dl .date{width:46px;text-align:center;flex-shrink:0}
+.dl .date b{font-family:'Space Grotesk';font-size:18px;font-weight:600;display:block;line-height:1}
+.dl .date small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.dl .di{flex:1;min-width:0}.dl .di b{font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl .di small{font-size:11px;color:var(--muted)}
+.dl .tag{flex-shrink:0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft)}
+.legend span{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px}
+.pill{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;display:inline-block}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:#A8680A}.pill.bad{background:var(--bad-bg);color:var(--bad)}
+
+/* clickable rows -> detail */
+.prow{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 15px;transition:.15s;text-align:left;width:100%;display:block}
+.prow.click{cursor:pointer}.prow.click:hover{border-color:var(--brand);box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.prow .ptop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.prow .pname{font-size:13.5px;font-weight:600;line-height:1.3}
+.prow .pmeta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.prow .pstats{display:flex;gap:18px;margin-top:11px;flex-wrap:wrap}
+.prow .ps{display:flex;flex-direction:column}
+.prow .ps small{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em}
+.prow .ps b{font-family:'Space Grotesk';font-size:14px;font-weight:600;margin-top:2px}
+.prow .ptags{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.prow .progress{height:5px;border-radius:3px;background:var(--line-soft);margin-top:11px;overflow:hidden}
+.prow .progress i{display:block;height:100%;border-radius:3px}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(8,15,26,.5);opacity:0;pointer-events:none;transition:.25s;z-index:40;backdrop-filter:blur(1.5px)}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:min(560px,94vw);background:var(--canvas);box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;display:flex;flex-direction:column}
+.drawer.on{transform:translateX(0)}
+.drawer .dhead{padding:22px 24px 18px;background:var(--card);border-bottom:1px solid var(--line)}
+.drawer .dhead .eyebrow{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.drawer .dhead h3{font-family:'Space Grotesk';font-size:20px;font-weight:600;margin-top:5px}
+.drawer .dhead p{font-size:12.5px;color:var(--muted);margin-top:5px}
+.drawer .close{position:absolute;top:20px;right:20px;width:32px;height:32px;border-radius:8px;background:var(--canvas);display:grid;place-items:center;color:var(--muted);font-size:17px;transition:.15s}
+.drawer .close:hover{background:var(--bad-bg);color:var(--bad)}
+.drawer .dbody{flex:1;overflow-y:auto;padding:18px 24px 40px}
+.grp{margin-bottom:18px}
+.grp .gh{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.grp .gh .sw{width:11px;height:11px;border-radius:3px}
+.grp .gh b{font-size:13px;font-weight:600}
+.grp .gh .ct{margin-left:auto;font-size:11px;color:var(--muted);background:var(--card);padding:2px 9px;border-radius:20px;border:1px solid var(--line)}
+.grp .prow{margin-bottom:8px}
+.empty{text-align:center;color:var(--faint);font-size:13px;padding:50px 20px}
+
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filters button{font-size:12px;font-weight:500;padding:7px 13px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--muted);transition:.15s}
+.filters button:hover{border-color:var(--brand);color:var(--ink)}
+.filters button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* DETAIL PAGE */
+.dhead-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.dtitle{font-family:'Space Grotesk';font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.dtitle-meta{font-size:13px;color:var(--muted);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chiptag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px}
+.mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:18px 0}
+.mcard{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 15px;box-shadow:var(--shadow)}
+.mcard small{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em}
+.mcard b{font-family:'Space Grotesk';font-size:19px;font-weight:600;display:block;margin-top:4px}
+.detail-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;align-items:start}
+
+/* gantt */
+.gmonths{display:flex;margin-left:150px;border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:8px}
+.gmonths span{flex:1;font-size:9.5px;color:var(--faint);text-align:center;text-transform:uppercase}
+.grow{display:flex;align-items:center;margin-bottom:9px}
+.grow .glab{width:150px;flex-shrink:0;font-size:12px;font-weight:500;padding-right:10px}
+.gtrack{flex:1;position:relative;height:22px}
+.gbar{position:absolute;height:22px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:10px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden}
+.gnow{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--bad);z-index:2}
+
+/* deliverable / list rows */
+.lrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.lrow:last-child{border-bottom:none}
+.lrow .lname{flex:1;font-size:13px;font-weight:500}
+.lrow .lname small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:1px}
+.lrow .ldue{font-size:11.5px;color:var(--muted);font-family:'Space Grotesk'}
+
+/* checklist + ring */
+.chkwrap{display:flex;gap:18px;align-items:flex-start}
+.ring{width:92px;height:92px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;position:relative}
+.ring .rt{position:absolute;text-align:center}
+.ring .rt b{font-family:'Space Grotesk';font-size:20px;font-weight:600;display:block;line-height:1}
+.ring .rt small{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.chklist{flex:1}
+.chkitem{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px;cursor:pointer}
+.chkitem:last-child{border-bottom:none}
+.chkbox{width:18px;height:18px;border-radius:5px;border:2px solid var(--line);flex-shrink:0;display:grid;place-items:center;transition:.15s}
+.chkbox.on{background:var(--ok);border-color:var(--ok)}
+.chkbox svg{width:11px;height:11px;color:#fff;opacity:0}.chkbox.on svg{opacity:1}
+.chkitem.done span{color:var(--muted);text-decoration:line-through}
+
+/* docs folder */
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px}
+.doc{border:1px solid var(--line);border-radius:11px;padding:13px;transition:.15s;text-align:left;background:var(--card)}
+.doc:hover{border-color:var(--brand);box-shadow:var(--shadow)}
+.doc .dic{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;margin-bottom:10px}
+.doc .dic svg{width:18px;height:18px}
+.doc b{font-size:12px;font-weight:600;display:block;line-height:1.3}
+.doc .dst{font-size:10.5px;font-weight:600;margin-top:8px;display:inline-block;padding:2px 7px;border-radius:5px}
+.doc .upd{font-size:10px;color:var(--faint);margin-top:6px}
+
+/* workload */
+.wlrow{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+.wlname{width:120px;flex-shrink:0;font-size:12px;font-weight:500;display:flex;flex-direction:column}
+.wlname .cap{font-size:10px;color:var(--faint)}
+.wltrack{flex:1;height:22px;border-radius:6px;background:var(--line-soft);display:flex;overflow:hidden}
+.wltrack span{height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:600;transition:.16s}
+.wltrack span:hover{filter:brightness(1.08)}
+.wlflag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;flex-shrink:0}
+
+/* mitigation log */
+.mit{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft);align-items:flex-start}
+.mit:last-child{border-bottom:none}
+.mit .mbar{width:4px;align-self:stretch;border-radius:3px;flex-shrink:0}
+.mit .mmid{flex:1;min-width:0}
+.mit .mmid b{font-size:12.5px;font-weight:600;display:block}
+.mit .mmid small{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+.mit .mstat{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;flex-shrink:0;cursor:pointer;transition:.15s}
+.mit .mstat:hover{filter:brightness(.95)}
+
+.hide{display:none}
+.topbar-m{display:none;align-items:center;gap:12px;margin-bottom:16px}
+.topbar-m button{width:38px;height:38px;border-radius:9px;background:var(--ink);color:#fff;display:grid;place-items:center}
+@media(max-width:1080px){.kpis{grid-template-columns:repeat(2,1fr)}.two,.detail-grid{grid-template-columns:1fr}}
+@media(max-width:820px){.rail{position:fixed;left:0;transform:translateX(-100%);z-index:60;transition:.25s}.rail.open{transform:translateX(0)}.main{padding:20px 16px 60px}.topbar-m{display:flex}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" id="rail">
+    <div class="brand"><div class="mark">P</div><div><b>ProTrack</b><small>Command Centre</small></div></div>
+    <nav class="nav" id="nav">
+      <div class="eyebrow">Overview</div>
+      <button data-view="dashboard" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <div class="eyebrow">Proposal Management</div>
+      <button data-view="proposals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 13h6M9 17h3"/></svg>Proposals Pipeline</button>
+      <div class="eyebrow">Project Management</div>
+      <button data-view="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Project Portfolio</button>
+      <button data-view="workload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>Team Workload</button>
+      <button data-view="risks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Risk Alerts</button>
+    </nav>
+    <div class="who"><div class="av">D</div><div><span>Director</span><small>Top Management</small></div></div>
+  </aside>
+  <main class="main">
+    <div class="topbar-m"><button onclick="document.getElementById('rail').classList.toggle('open')">☰</button><b>ProTrack</b></div>
+    <div id="view"></div>
+  </main>
+</div>
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead"><button class="close" onclick="closeDrawer()">✕</button><div class="eyebrow" id="dEyebrow"></div><h3 id="dTitle"></h3><p id="dSub"></p></div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+
+<script>
+/* ============================ DATA ============================ */
+const DISC={engineering:{label:'Engineering',hex:'#2563EB'},environment:{label:'Environment',hex:'#16A34A'},social:{label:'Social & Urban Dev.',hex:'#D97706'},hydrology:{label:'Hydrology & Water',hex:'#0891B2'}};
+const STATUS={ontrack:{label:'On Track',cls:'ok',pip:'#15A06B'},attention:{label:'Needs Attention',cls:'warn',pip:'#E08A00'},delayed:{label:'Delayed',cls:'bad',pip:'#DC2D2D'}};
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const NOW_M=6.3; // June 2026 marker on the 12-month track
+
+const CHK_TEMPLATE=['Signed contract / LOA on file','Inception report approved','Work-plan baseline locked','Team mobilisation confirmed','Quality assurance plan in place','Client kick-off held','Risk register updated','Interim progress claim raised'];
+const DOC_SET=[
+ {n:'Terms of Reference (TOR)',ic:'<path d="M14 3v4a1 1 0 0 0 1 1h4M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/>'},
+ {n:'Consultant Details / CVs',ic:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/>'},
+ {n:'Technical Methodology',ic:'<path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>'},
+ {n:'Technical Proposal',ic:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>'},
+ {n:'Financial Proposal',ic:'<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'},
+ {n:'Final Submission Pack',ic:'<path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>'},
+];
+const DOCSTATE={final:{l:'Final',c:'var(--ok)',bg:'var(--ok-bg)'},uploaded:{l:'Uploaded',c:'var(--eng)',bg:'#E7F0FF'},draft:{l:'Draft',c:'var(--warn)',bg:'var(--warn-bg)'},missing:{l:'Missing',c:'var(--bad)',bg:'var(--bad-bg)'}};
+
+const PROJECTS=[
+ {id:'P1',name:'Colombo Fort & Pettah Pedestrianisation (THRIVE)',disc:'engineering',mgr:'A. Fernando',client:'Western Provincial Council',status:'ontrack',health:84,sched:8,budget:-9.5,progress:62,risks:['client'],due:'18 Jul',fromProposal:'Q2',
+   team:[['A. Fernando','Project Lead'],['R. Silva','Transport Engineer'],['K. Dias','GIS Analyst']],
+   workplan:[['Inception & data collection',1,3,'done'],['Traffic surveys & modelling',3,6,'active'],['Concept & detailed design',6,9,'upcoming'],['Stakeholder validation',9,11,'upcoming']],
+   deliverables:[['Inception Report','A. Fernando','15 Feb','submitted'],['Traffic Survey Dataset','K. Dias','30 Jun','active'],['Pedestrian Network Model','R. Silva','15 Jul','active'],['Concept Design Report','A. Fernando','30 Aug','upcoming']],
+   chkDone:[0,1,2,3,5,6]},
+ {id:'P2',name:'Hasalaka Oya Bridge & Access Roads',disc:'engineering',mgr:'R. Silva',client:'Road Development Authority',status:'attention',health:58,sched:14,budget:-22,progress:41,risks:['budget','consultant'],due:'02 Jul',fromProposal:null,
+   team:[['R. Silva','Project Lead'],['T. Bandara','Structural Eng.']],
+   workplan:[['Survey & geotech',1,3,'done'],['Hydraulic & structural design',3,7,'delayed'],['Tender documentation',7,9,'upcoming'],['Construction supervision',9,12,'upcoming']],
+   deliverables:[['Geotechnical Report','T. Bandara','20 Feb','submitted'],['Hydraulic Design','R. Silva','10 Jun','delayed'],['Structural Drawings','T. Bandara','05 Jul','delayed'],['Tender Package','R. Silva','30 Aug','upcoming']],
+   chkDone:[0,1,4]},
+ {id:'P3',name:'Knuckles Participatory Land Restoration (GCF)',disc:'environment',mgr:'N. Perera',client:'Min. of Environment / GCF',status:'attention',health:55,sched:9,budget:-70,progress:35,risks:['budget','client'],due:'29 Jun',fromProposal:'Q1',
+   team:[['N. Perera','Team Leader'],['M. Wickrama','Land-use Specialist'],['H. Karu','Community Officer'],['K. Dias','GIS Analyst']],
+   workplan:[['Inception & scoping',1,3,'done'],['Baseline & land-use survey',3,6,'active'],['Participatory restoration plans',6,10,'upcoming'],['Validation & handover',10,12,'upcoming']],
+   deliverables:[['Inception Report','N. Perera','28 Feb','submitted'],['Land-use Change Baseline','M. Wickrama','20 May','submitted'],['Sub-watershed Restoration Plan','N. Perera','30 Jun','delayed'],['Livelihoods Framework','H. Karu','15 Aug','upcoming']],
+   chkDone:[0,1,4,5]},
+ {id:'P4',name:'ESIA — Northern Expressway Extension',disc:'environment',mgr:'N. Perera',client:'Road Development Authority',status:'ontrack',health:79,sched:3,budget:-4,progress:70,risks:[],due:'25 Jul',fromProposal:null,
+   team:[['N. Perera','EIA Lead'],['M. Wickrama','Ecologist']],
+   workplan:[['Screening & scoping',1,2,'done'],['Impact assessment',2,6,'active'],['EMP & disclosure',6,8,'upcoming'],['CEA submission',8,9,'upcoming']],
+   deliverables:[['Scoping Report','N. Perera','30 Jan','submitted'],['Baseline Ecology Survey','M. Wickrama','10 Apr','submitted'],['Draft ESIA','N. Perera','10 Jul','active'],['EMP','N. Perera','15 Aug','upcoming']],
+   chkDone:[0,1,2,3,4,5,6]},
+ {id:'P5',name:'Capacity Building — Local Governance',disc:'social',mgr:'A. Manager',client:'UNDP',status:'delayed',health:31,sched:25,budget:-14.5,progress:22,risks:['management','client','consultant'],due:'21 Jun',fromProposal:null,
+   team:[['A. Manager','Project Lead'],['H. Karu','Training Specialist']],
+   workplan:[['Needs assessment',1,3,'delayed'],['Module development',3,6,'delayed'],['Training delivery',6,10,'upcoming'],['Evaluation',10,12,'upcoming']],
+   deliverables:[['Capacity Needs Assessment','A. Manager','30 Apr','delayed'],['Training Modules','H. Karu','31 May','delayed'],['Delivery Plan','A. Manager','20 Jun','delayed'],['Mid-term Review','A. Manager','30 Sep','upcoming']],
+   chkDone:[0]},
+ {id:'P6',name:'School Rehabilitation — Phase II',disc:'social',mgr:'A. Manager',client:'Min. of Education',status:'attention',health:55,sched:-2,budget:-70,progress:48,risks:['budget'],due:'04 Jul',fromProposal:'Q4',
+   team:[['A. Manager','Project Lead'],['T. Bandara','Civil Eng.']],
+   workplan:[['Condition assessment',1,3,'done'],['Rehab design',3,6,'active'],['Procurement support',6,8,'upcoming'],['Works monitoring',8,12,'upcoming']],
+   deliverables:[['Condition Survey','T. Bandara','15 Mar','submitted'],['Rehab Design & BOQ','A. Manager','30 Jun','active'],['Procurement Pack','A. Manager','15 Aug','upcoming'],['Completion Report','A. Manager','15 Dec','upcoming']],
+   chkDone:[0,1,2,3,4]},
+ {id:'P7',name:'Urban Resettlement Action Plan — Kandy',disc:'social',mgr:'S. Jayasuriya',client:'Kandy Municipal Council',status:'delayed',health:38,sched:19,budget:-31,progress:27,risks:['management','client'],due:'27 Jun',fromProposal:null,
+   team:[['S. Jayasuriya','Social Lead'],['H. Karu','Community Officer']],
+   workplan:[['Socio-economic survey',1,4,'delayed'],['Entitlement framework',4,7,'active'],['Draft RAP',7,9,'upcoming'],['Consultation & finalise',9,11,'upcoming']],
+   deliverables:[['Census & Asset Survey','S. Jayasuriya','30 Apr','delayed'],['Entitlement Matrix','S. Jayasuriya','10 Jun','delayed'],['Draft RAP','S. Jayasuriya','27 Jun','delayed'],['Final RAP','S. Jayasuriya','30 Sep','upcoming']],
+   chkDone:[0,1]},
+ {id:'P8',name:'Rural Water Supply Programme',disc:'hydrology',mgr:'A. Manager',client:'NWSDB',status:'attention',health:72,sched:12,budget:-56,progress:54,risks:['budget','client'],due:'09 Jul',fromProposal:'Q3',
+   team:[['A. Manager','Project Lead'],['P. Ranasinghe','Water Engineer'],['K. Dias','GIS Analyst']],
+   workplan:[['Demand assessment',1,3,'done'],['Source & network design',3,7,'active'],['Implementation support',7,11,'upcoming'],['O&M handover',11,12,'upcoming']],
+   deliverables:[['Demand Assessment','P. Ranasinghe','20 Mar','submitted'],['Source Yield Study','P. Ranasinghe','15 Jun','active'],['Network Design','A. Manager','15 Jul','active'],['Implementation Plan','A. Manager','30 Sep','upcoming']],
+   chkDone:[0,1,2,3,5,6]},
+ {id:'P9',name:'GIS Mapping — Flood Zones',disc:'hydrology',mgr:'B. Analyst',client:'Disaster Management Centre',status:'ontrack',health:84,sched:-8,budget:-9.5,progress:81,risks:[],due:'16 Jul',fromProposal:null,
+   team:[['B. Analyst','GIS Lead'],['K. Dias','GIS Analyst']],
+   workplan:[['Data acquisition',1,2,'done'],['Flood modelling',2,5,'done'],['Zone mapping & validation',5,8,'active'],['Atlas & dashboard',8,10,'upcoming']],
+   deliverables:[['Data Inventory','K. Dias','25 Jan','submitted'],['Flood Model','B. Analyst','30 Apr','submitted'],['Hazard Zone Maps','B. Analyst','30 Jun','active'],['Flood Atlas','B. Analyst','15 Aug','upcoming']],
+   chkDone:[0,1,2,3,4,5,6,7]},
+ {id:'P10',name:'Heen Ganga Watershed Hydrological Model',disc:'hydrology',mgr:'B. Analyst',client:'Irrigation Department',status:'ontrack',health:77,sched:1,budget:-6,progress:66,risks:['consultant'],due:'31 Jul',fromProposal:null,
+   team:[['B. Analyst','Modelling Lead'],['P. Ranasinghe','Hydrologist']],
+   workplan:[['Data & calibration setup',1,3,'done'],['Model build & calibration',3,7,'active'],['Scenario runs',7,9,'upcoming'],['Reporting',9,11,'upcoming']],
+   deliverables:[['Data Compilation','P. Ranasinghe','28 Feb','submitted'],['Calibrated Model','B. Analyst','15 Jul','active'],['Scenario Report','B. Analyst','30 Aug','upcoming'],['Final Report','B. Analyst','30 Oct','upcoming']],
+   chkDone:[0,1,2,3,4,6]},
+];
+
+const PROPOSALS=[
+ {id:'Q1',name:'Knuckles Land Restoration (GCF)',disc:'environment',client:'Min. of Environment / GCF',state:'won',stage:'rfp',wonAt:'rfp',value:2.4,mgr:'N. Perera',eoiDue:'10 Jan',rfpDue:'28 Feb',issues:[],docs:['final','final','final','final','final','final'],projectId:'P3'},
+ {id:'Q2',name:'Colombo Fort Pedestrianisation (THRIVE)',disc:'engineering',client:'Western Provincial Council',state:'won',stage:'rfp',wonAt:'rfp',value:1.1,mgr:'A. Fernando',eoiDue:'05 Jan',rfpDue:'20 Feb',issues:[],docs:['final','final','final','final','final','final'],projectId:'P1'},
+ {id:'Q3',name:'Rural Water Supply Programme',disc:'hydrology',client:'NWSDB',state:'won',stage:'rfp',wonAt:'rfp',value:1.8,mgr:'A. Manager',eoiDue:'12 Jan',rfpDue:'01 Mar',issues:[],docs:['final','final','final','final','final','final'],projectId:'P8'},
+ {id:'Q4',name:'School Rehabilitation Phase II',disc:'social',client:'Min. of Education',state:'won',stage:'rfp',wonAt:'rfp',value:0.9,mgr:'A. Manager',eoiDue:'08 Jan',rfpDue:'25 Feb',issues:[],docs:['final','final','final','final','final','final'],projectId:'P6'},
+ {id:'Q5',name:'Coastal Adaptation Plan — Galle',disc:'environment',client:'Coast Conservation Dept',state:'lost',stage:'rfp',wonAt:null,value:1.3,mgr:'N. Perera',eoiDue:'02 Feb',rfpDue:'15 Mar',issues:['financialWeak','technicalWeak'],docs:['final','final','final','draft','draft','uploaded'],projectId:null},
+ {id:'Q6',name:'Smart Traffic Corridor — Negombo',disc:'engineering',client:'Road Development Authority',state:'lost',stage:'rfp',wonAt:null,value:1.6,mgr:'A. Fernando',eoiDue:'20 Jan',rfpDue:'10 Mar',issues:['financialWeak'],docs:['final','final','final','final','draft','uploaded'],projectId:null},
+ {id:'Q7',name:'Solid Waste Master Plan — Matale',disc:'social',client:'Matale Urban Council',state:'lost',stage:'eoi',wonAt:null,value:0.7,mgr:'S. Jayasuriya',eoiDue:'18 Jan',rfpDue:'—',issues:['expertTeam'],docs:['final','draft','missing','missing','missing','missing'],projectId:null},
+ {id:'Q8',name:'Mahaweli Basin Sediment Study',disc:'hydrology',client:'Mahaweli Authority',state:'ongoing',stage:'rfp',wonAt:'eoi',value:2.1,mgr:'B. Analyst',eoiDue:'15 Apr',rfpDue:'10 Jul',issues:['expertTeam'],docs:['final','uploaded','draft','draft','missing','missing'],projectId:null},
+ {id:'Q9',name:'Urban Heat & Green Cover — Colombo',disc:'social',client:'Urban Development Authority',state:'ongoing',stage:'rfp',wonAt:'eoi',value:1.0,mgr:'S. Jayasuriya',eoiDue:'01 May',rfpDue:'22 Jul',issues:[],docs:['final','uploaded','draft','draft','draft','missing'],projectId:null},
+ {id:'Q10',name:'Dam Safety Review — Victoria',disc:'engineering',client:'Irrigation Department',state:'ongoing',stage:'rfp',wonAt:'eoi',value:1.4,mgr:'R. Silva',eoiDue:'20 Apr',rfpDue:'05 Aug',issues:['expertTeam'],docs:['final','draft','uploaded','draft','missing','missing'],projectId:null},
+ {id:'Q11',name:'Wetland Restoration — Muthurajawela',disc:'environment',client:'SL Land Devel. Corp.',state:'ongoing',stage:'eoi',wonAt:null,value:1.2,mgr:'N. Perera',eoiDue:'15 Jul',rfpDue:'—',issues:[],docs:['draft','uploaded','missing','missing','missing','missing'],projectId:null},
+ {id:'Q12',name:'Transit-Oriented Development — Malabe',disc:'engineering',client:'Urban Development Authority',state:'ongoing',stage:'eoi',wonAt:null,value:0.8,mgr:'A. Fernando',eoiDue:'25 Jul',rfpDue:'—',issues:['expertTeam'],docs:['draft','missing','missing','missing','missing','missing'],projectId:null},
+];
+
+const RISKFACTORS={
+ budget:{label:'Budget Deviation',color:'#DC2D2D',desc:'Cost overrun or fee erosion beyond approved baseline',icon:'<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',computed:false},
+ consultant:{label:'Consultant-Side Risk',color:'#7C3AED',desc:'Key-expert availability, sub-consultant & deliverable slippage',icon:'<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',computed:false},
+ client:{label:'Client-Side Risk',color:'#0891B2',desc:'Approval delays, data gaps, scope ambiguity from the client',icon:'<path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/>',computed:false},
+ management:{label:'Management Risk',color:'#D97706',desc:'Coordination, staffing conflicts, decision & governance lag',icon:'<path d="M12 20h9M3 20l4-4 3 3 5-5 3 3"/><circle cx="6" cy="7" r="3"/>',computed:false},
+ compliance:{label:'Compliance / Checklist Gap',color:'#0E9E84',desc:'Governance checklist below 70% complete — auto-flagged & recalculated live',icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',computed:true},
+};
+const PROPRISK={
+ expertTeam:{label:'Lack of Expert Team',color:'#7C3AED',scope:'Both',desc:'No qualified key expert mapped to a required position'},
+ methodologyDelay:{label:'Methodology Submission Delay',color:'#D97706',scope:'Ongoing',desc:'Methodology document still in draft / missing past plan'},
+ financialWeak:{label:'Financial Proposal Weakness',color:'#DC2D2D',scope:'Submitted',desc:'Pricing scored low / uncompetitive vs winners'},
+ technicalWeak:{label:'Technical Proposal Weakness',color:'#0891B2',scope:'Submitted',desc:'Technical score below qualification threshold'},
+};
+
+let MITIGATIONS=[
+ {id:1,action:'Re-baseline GCF budget & request variation order',risk:'budget',pid:'P3',owner:'Director',status:'inprogress',due:'30 Jun'},
+ {id:2,action:'Escalate UNDP data hand-over delay to steering committee',risk:'client',pid:'P5',owner:'Director',status:'open',due:'24 Jun'},
+ {id:3,action:'Reassign structural engineer to recover Hasalaka schedule',risk:'consultant',pid:'P2',owner:'Ops Lead',status:'inprogress',due:'05 Jul'},
+ {id:4,action:'Approve overtime to clear Kandy RAP backlog',risk:'management',pid:'P7',owner:'Director',status:'open',due:'28 Jun'},
+ {id:5,action:'Mandate weekly checklist audit for delayed projects',risk:'compliance',pid:null,owner:'Director',status:'closed',due:'10 Jun'},
+];
+
+/* ============================ HELPERS ============================ */
+const $=s=>document.querySelector(s);
+const P=id=>PROJECTS.find(p=>p.id===id);
+const Q=id=>PROPOSALS.find(q=>q.id===id);
+const fmt=n=>'$'+n.toFixed(1)+'M';
+const chkPct=p=>Math.round(p.chkDone.length/CHK_TEMPLATE.length*100);
+// risk that includes the live-computed compliance flag
+function projectRisks(p){const r=[...p.risks];if(chkPct(p)<70&&!r.includes('compliance'))r.push('compliance');return r;}
+const byStatus=s=>PROJECTS.filter(p=>p.status===s);
+const byRisk=r=>PROJECTS.filter(p=>projectRisks(p).includes(r));
+const totalOpenRisks=()=>PROJECTS.reduce((a,p)=>a+projectRisks(p).length,0);
+const delayedDeliverables=p=>p.deliverables.filter(d=>d[3]==='delayed').length;
+const allDelayedDel=()=>PROJECTS.reduce((a,p)=>a+delayedDeliverables(p),0);
+// methodology delay computed live from docs (index 2 = methodology) for ongoing bids
+function propIssues(q){const i=[...q.issues];if(q.state==='ongoing'&&(q.docs[2]==='draft'||q.docs[2]==='missing')&&!i.includes('methodologyDelay'))i.push('methodologyDelay');return i;}
+const groupByDisc=arr=>{const g={};for(const k in DISC)g[k]=[];arr.forEach(p=>g[p.disc].push(p));return g;};
+
+/* ============================ ROW RENDERERS ============================ */
+function projectRow(p,clickable=true){
+ const st=STATUS[p.status];
+ const schedTxt=p.sched>0?('+'+p.sched+'d behind'):(p.sched<0?(Math.abs(p.sched)+'d ahead'):'on time');
+ const schedCls=p.sched>7?'down':p.sched<0?'up':'';
+ const risks=projectRisks(p);
+ const tags=risks.map(r=>`<span class="pill" style="background:${RISKFACTORS[r].color}1A;color:${RISKFACTORS[r].color}">${RISKFACTORS[r].label.split(' ')[0]==='Compliance'?'Checklist gap':RISKFACTORS[r].label.replace('-Side','').replace(' Deviation','').replace(' Risk','')}</span>`).join('');
+ const del=delayedDeliverables(p);
+ return `<button class="prow ${clickable?'click':''}" ${clickable?`onclick="setView('projectDetail','${p.id}')"`:''}>
+   <div class="ptop"><div><div class="pname">${p.name}</div><div class="pmeta">${p.id} · ${p.mgr} · ${p.client}</div></div><span class="pill ${st.cls}">${st.label}</span></div>
+   <div class="pstats">
+     <div class="ps"><small>Health</small><b>${p.health}/100</b></div>
+     <div class="ps"><small>Schedule</small><b class="${schedCls}">${schedTxt}</b></div>
+     <div class="ps"><small>Budget dev.</small><b class="${p.budget<-20?'down':''}">${p.budget}%</b></div>
+     <div class="ps"><small>Checklist</small><b class="${chkPct(p)<70?'down':''}">${chkPct(p)}%</b></div>
+     <div class="ps"><small>Delayed deliv.</small><b class="${del?'down':''}">${del}</b></div>
+   </div>
+   <div class="progress"><i style="width:${p.progress}%;background:${DISC[p.disc].hex}"></i></div>
+   ${tags?`<div class="ptags">${tags}</div>`:''}
+ </button>`;
+}
+function proposalRow(q,clickable=true){
+ const sc=q.state==='won'?'ok':q.state==='lost'?'bad':'warn';
+ const txt=q.state==='won'?`Won at ${q.wonAt.toUpperCase()}`:q.state==='lost'?`Lost at ${q.stage.toUpperCase()}`:`Ongoing · ${q.stage.toUpperCase()}`;
+ const tags=propIssues(q).map(i=>`<span class="pill" style="background:${PROPRISK[i].color}1A;color:${PROPRISK[i].color}">${PROPRISK[i].label}</span>`).join('');
+ const docsDone=q.docs.filter(d=>d==='final').length;
+ return `<button class="prow ${clickable?'click':''}" ${clickable?`onclick="setView('proposalDetail','${q.id}')"`:''}>
+   <div class="ptop"><div><div class="pname">${q.name}</div><div class="pmeta">${q.id} · ${q.mgr} · ${q.client}</div></div><span class="pill ${sc}">${txt}</span></div>
+   <div class="pstats">
+     <div class="ps"><small>Discipline</small><b style="font-size:12px;color:${DISC[q.disc].hex}">${DISC[q.disc].label}</b></div>
+     <div class="ps"><small>Est. value</small><b>${fmt(q.value)}</b></div>
+     <div class="ps"><small>Documents</small><b>${docsDone}/6</b></div>
+   </div>
+   ${tags?`<div class="ptags">${tags}</div>`:''}
+ </button>`;
+}
+function disciplineGroups(list){
+ const g=groupByDisc(list);let h='';
+ for(const k in DISC){if(!g[k].length)continue;
+  h+=`<div class="grp"><div class="gh"><span class="sw" style="background:${DISC[k].hex}"></span><b>${DISC[k].label}</b><span class="ct">${g[k].length}</span></div>${g[k].map(p=>projectRow(p)).join('')}</div>`;}
+ return h||'<div class="empty">No projects in this category.</div>';
+}
+
+/* ============================ DRAWER ============================ */
+function openDrawer(eb,t,s,html){$('#dEyebrow').textContent=eb;$('#dTitle').textContent=t;$('#dSub').textContent=s;$('#dBody').innerHTML=html;$('#drawer').classList.add('on');$('#scrim').classList.add('on');$('#dBody').scrollTop=0;}
+function closeDrawer(){$('#drawer').classList.remove('on');$('#scrim').classList.remove('on');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+function drillStatus(s){const l=byStatus(s);openDrawer('Project Portfolio · '+STATUS[s].label,STATUS[s].label+' — by discipline',l.length+' project(s). Click any to open its work plan & deliverables.',disciplineGroups(l));}
+function drillRisk(r){const l=byRisk(r);const rf=RISKFACTORS[r];const mits=MITIGATIONS.filter(m=>m.risk===r);
+ const mitHtml=mits.length?`<div class="grp"><div class="gh"><b>Mitigation actions</b><span class="ct">${mits.length}</span></div>${mits.map(mitRow).join('')}</div>`:'';
+ openDrawer('Risk Alerts · Project',rf.label,rf.desc+'. '+l.length+' project(s) flagged.',mitHtml+disciplineGroups(l));}
+function drillPropSeg(fn,eb,t,s){const l=PROPOSALS.filter(fn);openDrawer(eb,t,s+' — '+l.length+' proposal(s)',l.length?l.map(q=>proposalRow(q)).join(''):'<div class="empty">Nothing here.</div>');}
+function drillPropRisk(k){const l=PROPOSALS.filter(q=>propIssues(q).includes(k));const pr=PROPRISK[k];openDrawer('Proposal Risk · '+pr.scope,pr.label,pr.desc+'. '+l.length+' proposal(s).',l.length?l.map(q=>proposalRow(q)).join(''):'<div class="empty">No proposals flagged.</div>');}
+
+/* ============================ DASHBOARD ============================ */
+function mitRow(m){
+ const sc={open:['Open','var(--bad-bg)','var(--bad)'],inprogress:['In progress','var(--warn-bg)','#A8680A'],closed:['Closed','var(--ok-bg)','var(--ok)']}[m.status];
+ const link=m.pid?`${m.pid} · ${P(m.pid).name}`:'Portfolio-wide';
+ return `<div class="mit"><div class="mbar" style="background:${RISKFACTORS[m.risk].color}"></div>
+   <div class="mmid"><b>${m.action}</b><small>${RISKFACTORS[m.risk].label} · ${link}</small><small>Owner: ${m.owner} · Target ${m.due}</small></div>
+   <button class="mstat" style="background:${sc[1]};color:${sc[2]}" onclick="event.stopPropagation();cycleMit(${m.id})" title="Click to advance status">${sc[0]}</button></div>`;
+}
+function cycleMit(id){const m=MITIGATIONS.find(x=>x.id===id);m.status={open:'inprogress',inprogress:'closed',closed:'open'}[m.status];renderDashboard();}
+
+function workloadBars(items,segDefs,overloadKeyFn){
+ const max=Math.max(...items.map(i=>i.total),1);
+ return items.map(i=>{
+  const overload=overloadKeyFn(i);
+  return `<div class="wlrow"><div class="wlname">${i.name}<span class="cap">${i.total} active</span></div>
+   <div class="wltrack" style="width:${Math.max(i.total/max*100,6)}%">
+     ${segDefs.map(s=>i.segs[s.k]?`<span title="${i.segs[s.k]} ${s.l}" style="flex:${i.segs[s.k]};background:${s.c}">${i.segs[s.k]}</span>`:'').join('')}
+   </div>
+   ${overload?`<span class="wlflag" style="background:var(--bad-bg);color:var(--bad)">Overloaded</span>`:`<span class="wlflag" style="background:var(--ok-bg);color:var(--ok)">OK</span>`}</div>`;
+ }).join('');
+}
+
+function renderDashboard(){
+ const won=PROPOSALS.filter(q=>q.state==='won'),lost=PROPOSALS.filter(q=>q.state==='lost');
+ const submitted=won.length+lost.length,winRate=Math.round(won.length/submitted*100);
+ const ongoing=PROPOSALS.filter(q=>q.state==='ongoing');
+ const eoiOn=ongoing.filter(q=>q.stage==='eoi'),rfpOn=ongoing.filter(q=>q.stage==='rfp');
+ const wonRfp=won.filter(q=>q.wonAt==='rfp');
+ const eoiShort=PROPOSALS.filter(q=>q.wonAt).length,eoiSub=PROPOSALS.length,rfpSub=PROPOSALS.filter(q=>q.stage==='rfp').length;
+ const pipeVal=ongoing.reduce((a,q)=>a+q.value,0)+won.reduce((a,q)=>a+q.value,0);
+ const delayed=byStatus('delayed'),attention=byStatus('attention'),ontrack=byStatus('ontrack');
+ const avgHealth=(PROJECTS.reduce((a,p)=>a+p.health,0)/PROJECTS.length).toFixed(1);
+
+ // client win ratio
+ const cs={};[...won,...lost].forEach(q=>{cs[q.client]=cs[q.client]||{w:0,l:0};q.state==='won'?cs[q.client].w++:cs[q.client].l++;});
+ const cr=Object.entries(cs).map(([c,s])=>({c,r:Math.round(s.w/(s.w+s.l)*100)})).sort((a,b)=>b.r-a.r);
+ // discipline workload mix
+ const wl={};for(const k in DISC)wl[k]={ontrack:0,attention:0,delayed:0,total:0};
+ PROJECTS.forEach(p=>{wl[p.disc][p.status]++;wl[p.disc].total++;});
+ // proposal risk counts
+ const prc={};for(const k in PROPRISK)prc[k]=PROPOSALS.filter(q=>propIssues(q).includes(k)).length;
+ const maxPR=Math.max(...Object.values(prc),1);
+ // manager workload
+ const mgrs=[...new Set([...PROJECTS.map(p=>p.mgr),...PROPOSALS.map(q=>q.mgr)])];
+ const projLoad=mgrs.map(m=>{const ps=PROJECTS.filter(p=>p.mgr===m);return{name:m,total:ps.length,segs:{delayed:ps.filter(p=>p.status==='delayed').length,attention:ps.filter(p=>p.status==='attention').length,ontrack:ps.filter(p=>p.status==='ontrack').length}};}).filter(x=>x.total).sort((a,b)=>b.total-a.total);
+ const propLoad=mgrs.map(m=>{const qs=PROPOSALS.filter(q=>q.mgr===m&&q.state==='ongoing');return{name:m,total:qs.length,segs:{eoi:qs.filter(q=>q.stage==='eoi').length,rfp:qs.filter(q=>q.stage==='rfp').length}};}).filter(x=>x.total).sort((a,b)=>b.total-a.total);
+ const openMit=MITIGATIONS.filter(m=>m.status!=='closed').length;
+
+ $('#view').innerHTML=`
+ <div class="page-head"><h1>Executive Dashboard <span class="live"><i></i>Live</span></h1>
+   <p>Organisation-wide overview — Wednesday, 10 June 2026 · Proposal &amp; Project divisions</p></div>
+ <div class="kpis">
+  <div class="kpi"><div class="ic" style="background:#E7F0FF;color:var(--eng)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="v num">${PROJECTS.length}</div><div class="l">Active projects</div></div>
+  <div class="kpi"><div class="ic" style="background:var(--ok-bg);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div class="trend ${avgHealth>=60?'up':'down'}">${avgHealth>=60?'▲':'▼'}</div><div class="v num">${avgHealth}<span style="font-size:15px;color:var(--faint)">/100</span></div><div class="l">Avg health score</div></div>
+  <div class="kpi"><div class="ic" style="background:var(--bad-bg);color:var(--bad)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div><div class="trend down">${allDelayedDel()} late</div><div class="v num">${totalOpenRisks()}</div><div class="l">Open risk flags · ${allDelayedDel()} delayed deliverables</div></div>
+  <div class="kpi"><div class="ic" style="background:#EAFBF4;color:var(--brand)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></div><div class="trend up">▲ ${winRate}%</div><div class="v num">${winRate}%</div><div class="l">Win rate · ${won.length}/${submitted} · pipe ${fmt(pipeVal)}</div></div>
+ </div>
+
+ <div class="grid two" style="margin-bottom:18px">
+  <section class="card"><header><h2><span class="dot" style="background:var(--brand)"></span>Proposal Management</h2><button class="linkbtn" onclick="setView('proposals')">Open pipeline →</button></header>
+   <div class="body">
+    <div class="eyb">Bid-to-award pipeline</div>
+    <div class="funnel">
+     <button class="fstage s1" onclick="drillPropSeg(q=>true,'Proposals','All opportunities','Everything entering at EOI')"><div class="fv num">${eoiSub}</div><div class="fl">EOI submitted</div></button>
+     <button class="fstage s2" onclick="drillPropSeg(q=>q.wonAt,'Proposals','Shortlisted at EOI','Advanced past EOI to RFP')"><div class="fv num">${eoiShort}</div><div class="fl">Shortlisted (EOI win)</div></button>
+     <button class="fstage s3" onclick="drillPropSeg(q=>q.stage==='rfp','Proposals','Reached RFP stage','Full technical + financial proposal')"><div class="fv num">${rfpSub}</div><div class="fl">RFP stage</div></button>
+     <button class="fstage s4" onclick="drillPropSeg(q=>q.wonAt==='rfp','Proposals → Projects','Awarded at RFP','Convert directly into live projects')"><div class="fv num">${wonRfp.length}</div><div class="fl">Awarded → Project</div></button>
+    </div>
+    <div class="eyb" style="margin-top:14px">Submitted vs ongoing</div>
+    <div class="split">
+     <div class="splitbar"><div class="cap"><span>Submitted (${submitted})</span><span>${winRate}% win</span></div>
+      <div class="bar"><button class="seg" style="flex:${won.length};background:var(--ok)" onclick="drillPropSeg(q=>q.state==='won','Proposals','Proposals won','Awarded at EOI or RFP')">${won.length} won</button><button class="seg" style="flex:${lost.length};background:var(--bad)" onclick="drillPropSeg(q=>q.state==='lost','Proposals','Proposals lost','Not selected')">${lost.length} lost</button></div></div>
+     <div class="splitbar"><div class="cap"><span>Ongoing (${ongoing.length})</span><span>in prep</span></div>
+      <div class="bar"><button class="seg" style="flex:${eoiOn.length||1};background:var(--soc)" onclick="drillPropSeg(q=>q.state==='ongoing'&&q.stage==='eoi','Proposals','Ongoing — EOI','Preparing EOIs')">${eoiOn.length} EOI</button><button class="seg" style="flex:${rfpOn.length||1};background:var(--eng)" onclick="drillPropSeg(q=>q.state==='ongoing'&&q.stage==='rfp','Proposals','Ongoing — RFP','Shortlisted, preparing RFP')">${rfpOn.length} RFP</button></div></div>
+    </div>
+    <div class="eyb" style="margin-top:16px">Proposal risk factors — click to see affected bids</div>
+    ${Object.entries(PROPRISK).map(([k,r])=>`<button class="rfrow" onclick="drillPropRisk('${k}')"><div class="rfic" style="background:${r.color}1A;color:${r.color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div><div class="rfmid"><b>${r.label}</b><small>${r.scope} · ${r.desc}</small><div class="rfbar"><i style="width:${prc[k]/maxPR*100}%;background:${r.color}"></i></div></div><div class="rfct" style="color:${r.color}">${prc[k]}</div><span class="go">→</span></button>`).join('')}
+    <div class="eyb" style="margin-top:16px">Client win ratio</div>
+    ${cr.slice(0,4).map(c=>`<div class="disc" style="margin-bottom:9px"><div class="dname" style="width:auto;flex:1;font-size:12px">${c.c}</div><div class="dtrack" style="width:110px;flex:none"><span style="width:${c.r}%;background:var(--ok)"></span><span style="width:${100-c.r}%;background:#EBC8C8"></span></div><div class="dtot" style="width:42px">${c.r}%</div></div>`).join('')}
+   </div></section>
+
+  <section class="card"><header><h2><span class="dot" style="background:var(--eng)"></span>Project Management</h2><button class="linkbtn" onclick="setView('projects')">Open portfolio →</button></header>
+   <div class="body">
+    <div class="eyb">Portfolio status — click a tile to drill in</div>
+    <div class="tiles">
+     <button class="tile bad" onclick="drillStatus('delayed')"><span class="go">→</span><div class="tv" style="color:var(--bad)">${delayed.length}</div><div class="tl"><span class="pip" style="background:var(--bad)"></span>Delayed</div></button>
+     <button class="tile warn" onclick="drillStatus('attention')"><span class="go">→</span><div class="tv" style="color:#A8680A">${attention.length}</div><div class="tl"><span class="pip" style="background:var(--warn)"></span>Needs attention</div></button>
+     <button class="tile ok" onclick="drillStatus('ontrack')"><span class="go">→</span><div class="tv" style="color:var(--ok)">${ontrack.length}</div><div class="tl"><span class="pip" style="background:var(--ok)"></span>On track</div></button>
+    </div>
+    <div class="eyb" style="margin:18px 0 11px">Work-based structure — status mix by discipline</div>
+    <div class="disc-list">${Object.entries(wl).map(([k,w])=>`<div class="disc"><div class="dname"><span class="sw" style="background:${DISC[k].hex}"></span>${DISC[k].label}</div><div class="dtrack">${w.delayed?`<span title="${w.delayed} delayed" style="width:${w.delayed/w.total*100}%;background:var(--bad)"></span>`:''}${w.attention?`<span title="${w.attention} attention" style="width:${w.attention/w.total*100}%;background:var(--warn)"></span>`:''}${w.ontrack?`<span title="${w.ontrack} on track" style="width:${w.ontrack/w.total*100}%;background:var(--ok)"></span>`:''}</div><div class="dtot">${w.total}</div></div>`).join('')}</div>
+    <div class="legend"><span><i style="background:var(--bad)"></i>Delayed</span><span><i style="background:var(--warn)"></i>Attention</span><span><i style="background:var(--ok)"></i>On track</span></div>
+    <div class="eyb" style="margin:18px 0 11px">Delivery snapshot</div>
+    <div class="mcards" style="margin:0">
+     <div class="mcard"><small>Delayed deliverables</small><b class="down">${allDelayedDel()}</b></div>
+     <div class="mcard"><small>Avg checklist</small><b>${Math.round(PROJECTS.reduce((a,p)=>a+chkPct(p),0)/PROJECTS.length)}%</b></div>
+     <div class="mcard"><small>Checklist-gap projects</small><b class="${byRisk('compliance').length?'down':''}">${byRisk('compliance').length}</b></div>
+    </div>
+   </div></section>
+ </div>
+
+ <div class="grid two" style="margin-bottom:18px">
+  <section class="card"><header><h2><span class="dot" style="background:var(--bad)"></span>Risk Command Centre</h2><button class="linkbtn" onclick="setView('risks')">All alerts →</button></header>
+   <div class="body"><div class="eyb">Click a factor to see exposed projects &amp; linked actions</div>
+    ${Object.entries(RISKFACTORS).map(([k,r])=>{const n=byRisk(k).length;const mx=Math.max(...Object.keys(RISKFACTORS).map(x=>byRisk(x).length),1);return `<button class="rfrow" onclick="drillRisk('${k}')"><div class="rfic" style="background:${r.color}1A;color:${r.color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${r.icon}</svg></div><div class="rfmid"><b>${r.label}${r.computed?' <span style="font-size:9px;font-weight:600;color:var(--brand);background:var(--ok-bg);padding:1px 5px;border-radius:4px;vertical-align:1px">AUTO</span>':''}</b><small>${r.desc}</small><div class="rfbar"><i style="width:${n/mx*100}%;background:${r.color}"></i></div></div><div class="rfct" style="color:${r.color}">${n}</div><span class="go">→</span></button>`;}).join('')}
+   </div></section>
+
+  <section class="card"><header><h2><span class="dot" style="background:var(--purple)"></span>Risk Mitigation Actions <span class="sub">${openMit} open · top management</span></h2></header>
+   <div class="body" style="padding-top:8px"><div class="eyb">Decisions taken to reduce exposure — tap a status to advance it</div>
+    ${MITIGATIONS.map(mitRow).join('')}
+   </div></section>
+ </div>
+
+ <section class="card" style="margin-bottom:18px"><header><h2><span class="dot" style="background:var(--soc)"></span>Team Workload &amp; Capacity</h2><button class="linkbtn" onclick="setView('workload')">Full view →</button></header>
+  <div class="grid two body">
+   <div><div class="eyb">Active projects per manager</div>${workloadBars(projLoad,[{k:'delayed',c:'var(--bad)',l:'delayed'},{k:'attention',c:'var(--warn)',l:'attention'},{k:'ontrack',c:'var(--ok)',l:'on track'}],i=>i.total>=3)}<div class="legend" style="margin-top:8px;padding-top:8px"><span><i style="background:var(--bad)"></i>Delayed</span><span><i style="background:var(--warn)"></i>Attention</span><span><i style="background:var(--ok)"></i>On track</span></div></div>
+   <div><div class="eyb">Ongoing proposals per manager</div>${workloadBars(propLoad,[{k:'eoi',c:'var(--soc)',l:'EOI'},{k:'rfp',c:'var(--eng)',l:'RFP'}],i=>i.total>=2)}<div class="legend" style="margin-top:8px;padding-top:8px"><span><i style="background:var(--soc)"></i>EOI stage</span><span><i style="background:var(--eng)"></i>RFP stage</span></div></div>
+  </div></section>
+
+ <section class="card"><header><h2><span class="dot" style="background:var(--soc)"></span>Upcoming Deadlines <span class="sub">next 30 days</span></h2></header>
+  <div class="body" style="padding-top:6px">${deadlineRows()}</div></section>`;
+}
+
+// build deadlines live from delayed/active deliverables + ongoing RFPs
+function deadlineRows(){
+ let items=[];
+ PROJECTS.forEach(p=>p.deliverables.forEach(d=>{if(d[3]==='delayed'||d[3]==='active')items.push({name:d[0],meta:`${p.id} · ${DISC[p.disc].label}`,due:d[2],late:d[3]==='delayed'});}));
+ PROPOSALS.filter(q=>q.state==='ongoing'&&q.stage==='rfp').forEach(q=>items.push({name:q.name+' — RFP due',meta:`${q.id} · Proposal`,due:q.rfpDue,late:propIssues(q).includes('methodologyDelay')}));
+ items=items.slice(0,7);
+ return items.map(it=>{const[d,m]=it.due.split(' ');return `<div class="dl"><div class="date"><b class="num">${d}</b><small>${m||''}</small></div><div class="di"><b>${it.name}</b><small>${it.meta}</small></div><span class="tag pill ${it.late?'bad':'warn'}">${it.late?'Overdue':'Due soon'}</span></div>`;}).join('');
+}
+
+/* ============================ DETAIL: PROJECT ============================ */
+function gantt(p){
+ const months=MONTHS.map(m=>`<span>${m[0]}</span>`).join('');
+ const stc={done:'var(--ok)',active:'var(--eng)',upcoming:'#B7C2D2',delayed:'var(--bad)'};
+ const rows=p.workplan.map(([n,s,e,st])=>{const left=(s-1)/12*100,w=(e-s+1)/12*100;return `<div class="grow"><div class="glab">${n}</div><div class="gtrack"><div class="gbar" style="left:${left}%;width:${w}%;background:${stc[st]}">${st==='delayed'?'⚠ '+n.split(' ')[0]:''}</div></div></div>`;}).join('');
+ return `<div class="gmonths">${months}</div>${rows}<div style="position:relative;margin-left:150px;height:0"><div class="gnow" style="left:${(NOW_M-1)/12*100}%;position:relative;height:14px;margin-top:-10px"></div><div style="font-size:9px;color:var(--bad);position:absolute;left:${(NOW_M-1)/12*100}%;transform:translateX(-50%);top:14px">today</div></div>`;
+}
+function renderProjectDetail(id){
+ const p=P(id);if(!p){renderDashboard();return;}
+ const st=STATUS[p.status],pct=chkPct(p),risks=projectRisks(p);
+ const delDel=delayedDeliverables(p);
+ const dstc={submitted:['ok','Submitted'],active:['warn','In progress'],delayed:['bad','Delayed'],upcoming:['',`Upcoming`]};
+ const mits=MITIGATIONS.filter(m=>m.pid===p.id);
+ $('#view').innerHTML=`
+ <button class="back" onclick="setView('projects')">← Back to portfolio</button>
+ <div class="dhead-row"><div>
+   <div class="dtitle">${p.name}</div>
+   <div class="dtitle-meta"><span class="chiptag" style="background:${DISC[p.disc].hex}1A;color:${DISC[p.disc].hex}">${DISC[p.disc].label}</span><span class="pill ${st.cls}">${st.label}</span><span>${p.id}</span><span>· ${p.client}</span>${p.fromProposal?`<span>· won from <a onclick="setView('proposalDetail','${p.fromProposal}')" style="color:var(--brand-deep);cursor:pointer;font-weight:600">${p.fromProposal}</a></span>`:''}</div>
+ </div></div>
+ <div class="mcards">
+   <div class="mcard"><small>Health</small><b>${p.health}/100</b></div>
+   <div class="mcard"><small>Manager</small><b style="font-size:14px">${p.mgr}</b></div>
+   <div class="mcard"><small>Schedule</small><b class="${p.sched>0?'down':'up'}">${p.sched>0?'+'+p.sched+'d':p.sched+'d'}</b></div>
+   <div class="mcard"><small>Budget dev.</small><b class="${p.budget<-20?'down':''}">${p.budget}%</b></div>
+   <div class="mcard"><small>Progress</small><b>${p.progress}%</b></div>
+   <div class="mcard"><small>Delayed deliv.</small><b class="${delDel?'down':''}">${delDel}</b></div>
+ </div>
+ <div class="detail-grid">
+  <div>
+   <section class="card" style="margin-bottom:18px"><header><h2>Work Plan</h2><span class="sub">phase timeline · 2026</span></header><div class="body" style="overflow-x:auto">${gantt(p)}</div></section>
+   <section class="card"><header><h2>Deliverables</h2><span class="sub">${delDel} delayed of ${p.deliverables.length}</span></header><div class="body" style="padding-top:6px">
+    ${p.deliverables.map(d=>{const s=dstc[d[3]];return `<div class="lrow"><div class="lname">${d[0]}<small>Owner: ${d[1]}</small></div><div class="ldue">${d[2]}</div><span class="pill ${s[0]}">${s[1]}</span></div>`;}).join('')}
+   </div></section>
+  </div>
+  <div>
+   <section class="card" style="margin-bottom:18px"><header><h2>Governance Checklist</h2></header><div class="body">
+    <div class="chkwrap"><div class="ring" style="background:conic-gradient(${pct<70?'var(--bad)':'var(--ok)'} ${pct*3.6}deg,var(--line-soft) 0)"><div style="position:absolute;inset:7px;background:var(--card);border-radius:50%"></div><div class="rt"><b style="color:${pct<70?'var(--bad)':'var(--ink)'}">${pct}%</b><small>complete</small></div></div>
+     <div class="chklist">${CHK_TEMPLATE.map((t,i)=>{const on=p.chkDone.includes(i);return `<div class="chkitem ${on?'done':''}" onclick="toggleChk('${p.id}',${i})"><div class="chkbox ${on?'on':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div><span>${t}</span></div>`;}).join('')}</div></div>
+    <div style="margin-top:12px;font-size:11.5px;color:${pct<70?'var(--bad)':'var(--muted)'};background:${pct<70?'var(--bad-bg)':'var(--ok-bg)'};padding:9px 12px;border-radius:9px">${pct<70?`⚠ Below 70% → this project is auto-flagged under <b>Compliance / Checklist Gap</b> risk. Tick items to clear it.`:`✓ Above threshold — no checklist-gap risk. Untick items to see the risk recalculate live.`}</div>
+   </div></section>
+   <section class="card" style="margin-bottom:18px"><header><h2>Assigned Team</h2></header><div class="body" style="padding-top:6px">
+    ${p.team.map(t=>`<div class="lrow"><div class="ring" style="width:30px;height:30px;background:${DISC[p.disc].hex};color:#fff;font-size:11px;font-weight:600;flex-shrink:0"><span style="position:relative">${t[0].split(' ').map(x=>x[0]).join('')}</span></div><div class="lname" style="margin-left:10px">${t[0]}<small>${t[1]}</small></div></div>`).join('')}
+   </div></section>
+   <section class="card"><header><h2>Risk &amp; Mitigation</h2></header><div class="body" style="padding-top:8px">
+    ${risks.length?risks.map(r=>`<div class="rfrow" style="cursor:default"><div class="rfic" style="background:${RISKFACTORS[r].color}1A;color:${RISKFACTORS[r].color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${RISKFACTORS[r].icon}</svg></div><div class="rfmid"><b>${RISKFACTORS[r].label}</b><small>${RISKFACTORS[r].desc}</small></div></div>`).join(''):'<div class="empty" style="padding:20px">No active risk flags.</div>'}
+    ${mits.length?`<div class="eyb" style="margin-top:14px">Actions in motion</div>${mits.map(mitRow).join('')}`:''}
+   </div></section>
+  </div>
+ </div>`;
+}
+function toggleChk(id,i){const p=P(id);const x=p.chkDone.indexOf(i);if(x>=0)p.chkDone.splice(x,1);else p.chkDone.push(i);renderProjectDetail(id);}
+
+/* ============================ DETAIL: PROPOSAL ============================ */
+function renderProposalDetail(id){
+ const q=Q(id);if(!q){renderDashboard();return;}
+ const sc=q.state==='won'?'ok':q.state==='lost'?'bad':'warn';
+ const txt=q.state==='won'?`Won at ${q.wonAt.toUpperCase()}`:q.state==='lost'?`Lost at ${q.stage.toUpperCase()}`:`Ongoing · ${q.stage.toUpperCase()} stage`;
+ const issues=propIssues(q);const docsFinal=q.docs.filter(d=>d==='final').length;
+ $('#view').innerHTML=`
+ <button class="back" onclick="setView('proposals')">← Back to pipeline</button>
+ <div class="dhead-row"><div>
+   <div class="dtitle">${q.name}</div>
+   <div class="dtitle-meta"><span class="chiptag" style="background:${DISC[q.disc].hex}1A;color:${DISC[q.disc].hex}">${DISC[q.disc].label}</span><span class="pill ${sc}">${txt}</span><span>${q.id}</span><span>· ${q.client}</span></div>
+ </div></div>
+ <div class="mcards">
+   <div class="mcard"><small>Assigned manager</small><b style="font-size:14px">${q.mgr}</b></div>
+   <div class="mcard"><small>Est. value</small><b>${fmt(q.value)}</b></div>
+   <div class="mcard"><small>EOI due</small><b style="font-size:15px">${q.eoiDue}</b></div>
+   <div class="mcard"><small>RFP due</small><b style="font-size:15px">${q.rfpDue}</b></div>
+   <div class="mcard"><small>Documents</small><b>${docsFinal}/6</b></div>
+ </div>
+ ${q.state==='won'?`<div style="background:var(--ok-bg);border:1px solid #BBE6CF;border-radius:11px;padding:13px 16px;margin-bottom:18px;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><span>✓ <b>Awarded.</b> This bid has converted into a live project in the Project division.</span>${q.projectId?`<button class="linkbtn" onclick="setView('projectDetail','${q.projectId}')">Open project ${q.projectId} →</button>`:''}</div>`:''}
+ ${q.state==='ongoing'?`<div style="background:var(--warn-bg);border:1px solid #F0DCAE;border-radius:11px;padding:13px 16px;margin-bottom:18px;font-size:13px">⏳ <b>In preparation.</b> Will move to the Project division automatically once awarded at RFP.</div>`:''}
+ <div class="detail-grid">
+  <div>
+   <section class="card"><header><h2>Document Folder</h2><span class="sub">click a file to update its status</span></header><div class="body">
+    <div class="docs">${DOC_SET.map((d,i)=>{const s=DOCSTATE[q.docs[i]];return `<button class="doc" onclick="cycleDoc('${q.id}',${i})"><div class="dic" style="background:${s.bg};color:${s.c}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${d.ic}</svg></div><b>${d.n}</b><span class="dst" style="background:${s.bg};color:${s.c}">${s.l}</span><div class="upd">tap to change</div></button>`;}).join('')}</div>
+    <div style="margin-top:14px;font-size:11.5px;color:var(--muted);background:var(--canvas);padding:10px 12px;border-radius:9px">A missing Technical or Financial Proposal on a submitted bid maps to the matching proposal-risk factor; a draft/missing Methodology on an ongoing bid auto-raises <b>Methodology Submission Delay</b>.</div>
+   </div></section>
+  </div>
+  <div>
+   <section class="card" style="margin-bottom:18px"><header><h2>Submission Timeline</h2></header><div class="body" style="padding-top:6px">
+    <div class="lrow"><div class="lname">EOI submission</div><div class="ldue">${q.eoiDue}</div><span class="pill ${q.wonAt||q.state==='lost'?'ok':'warn'}">${q.wonAt||q.state==='lost'?'Submitted':'Pending'}</span></div>
+    <div class="lrow"><div class="lname">EOI outcome</div><div class="ldue"></div><span class="pill ${q.wonAt?'ok':q.state==='lost'&&q.stage==='eoi'?'bad':'warn'}">${q.wonAt?'Shortlisted':q.state==='lost'&&q.stage==='eoi'?'Not selected':'Awaiting'}</span></div>
+    <div class="lrow"><div class="lname">RFP submission</div><div class="ldue">${q.rfpDue}</div><span class="pill ${q.stage==='rfp'?(q.state==='ongoing'?'warn':'ok'):''}">${q.stage==='rfp'?(q.state==='ongoing'?'In prep':'Submitted'):'—'}</span></div>
+    <div class="lrow"><div class="lname">Award decision</div><div class="ldue"></div><span class="pill ${q.state==='won'?'ok':q.state==='lost'&&q.stage==='rfp'?'bad':''}">${q.state==='won'?'Won':q.state==='lost'&&q.stage==='rfp'?'Lost':'Pending'}</span></div>
+   </div></section>
+   <section class="card"><header><h2>Proposal Risk Factors</h2></header><div class="body" style="padding-top:8px">
+    ${issues.length?issues.map(k=>`<div class="rfrow" style="cursor:default"><div class="rfic" style="background:${PROPRISK[k].color}1A;color:${PROPRISK[k].color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div><div class="rfmid"><b>${PROPRISK[k].label}</b><small>${PROPRISK[k].desc}</small></div></div>`).join(''):'<div class="empty" style="padding:20px">No risk factors flagged.</div>'}
+   </div></section>
+  </div>
+ </div>`;
+}
+function cycleDoc(id,i){const q=Q(id);const order=['missing','draft','uploaded','final'];q.docs[i]=order[(order.indexOf(q.docs[i])+1)%4];renderProposalDetail(id);}
+
+/* ============================ LIST + WORKLOAD PAGES ============================ */
+let projFilter='all',propFilter='all';
+function renderProjects(){
+ const tabs=[['all','All'],['delayed','Delayed'],['attention','Needs attention'],['ontrack','On track'],...Object.entries(DISC).map(([k,v])=>[k,v.label])];
+ const list=PROJECTS.filter(p=>projFilter==='all'||p.status===projFilter||p.disc===projFilter);
+ $('#view').innerHTML=`<div class="page-head"><h1>Project Portfolio</h1><p>All live engagements — click any card for its work plan, deliverables, checklist &amp; team.</p></div><div class="filters">${tabs.map(([k,l])=>`<button class="${projFilter===k?'active':''}" onclick="projFilter='${k}';renderProjects()">${l}</button>`).join('')}</div><div class="grid two">${list.map(p=>projectRow(p)).join('')||'<div class="empty">No matching projects.</div>'}</div>`;
+}
+function renderProposals(){
+ const tabs=[['all','All'],['won','Won'],['lost','Lost'],['ongoing','Ongoing'],['eoi','EOI stage'],['rfp','RFP stage']];
+ const list=PROPOSALS.filter(q=>propFilter==='all'||q.state===propFilter||q.stage===propFilter);
+ $('#view').innerHTML=`<div class="page-head"><h1>Proposals Pipeline</h1><p>Submitted &amp; ongoing bids — click any card for its document folder &amp; submission timeline.</p></div><div class="filters">${tabs.map(([k,l])=>`<button class="${propFilter===k?'active':''}" onclick="propFilter='${k}';renderProposals()">${l}</button>`).join('')}</div><div class="grid two">${list.map(q=>proposalRow(q)).join('')||'<div class="empty">No matching proposals.</div>'}</div>`;
+}
+function renderRisks(){
+ $('#view').innerHTML=`<div class="page-head"><h1>Risk Alerts</h1><p>Every flagged exposure across the portfolio, grouped by factor. Compliance is recalculated from live checklist data.</p></div>${Object.entries(RISKFACTORS).map(([k,r])=>{const l=byRisk(k);return `<section class="card" style="margin-bottom:16px"><header><h2><span class="dot" style="background:${r.color}"></span>${r.label} <span class="sub">${l.length} project(s)</span></h2></header><div class="body">${l.length?`<div class="grid two">${l.map(p=>projectRow(p)).join('')}</div>`:'<div class="empty">No projects flagged.</div>'}</div></section>`;}).join('')}`;
+}
+function renderWorkload(){
+ const mgrs=[...new Set([...PROJECTS.map(p=>p.mgr),...PROPOSALS.map(q=>q.mgr)])];
+ const rows=mgrs.map(m=>{const ps=PROJECTS.filter(p=>p.mgr===m);const qs=PROPOSALS.filter(q=>q.mgr===m&&q.state==='ongoing');const load=ps.length+qs.length;return{m,ps,qs,load};}).sort((a,b)=>b.load-a.load);
+ const projLoad=rows.filter(r=>r.ps.length).map(r=>({name:r.m,total:r.ps.length,segs:{delayed:r.ps.filter(p=>p.status==='delayed').length,attention:r.ps.filter(p=>p.status==='attention').length,ontrack:r.ps.filter(p=>p.status==='ontrack').length}}));
+ const propLoad=rows.filter(r=>r.qs.length).map(r=>({name:r.m,total:r.qs.length,segs:{eoi:r.qs.filter(q=>q.stage==='eoi').length,rfp:r.qs.filter(q=>q.stage==='rfp').length}}));
+ $('#view').innerHTML=`<div class="page-head"><h1>Team Workload &amp; Capacity</h1><p>Allocation of projects and live proposals across managers — overload is flagged at 3+ projects or 2+ active bids.</p></div>
+ <div class="grid two" style="margin-bottom:18px">
+  <section class="card"><header><h2><span class="dot" style="background:var(--eng)"></span>Active projects per manager</h2></header><div class="body">${workloadBars(projLoad,[{k:'delayed',c:'var(--bad)',l:'delayed'},{k:'attention',c:'var(--warn)',l:'attention'},{k:'ontrack',c:'var(--ok)',l:'on track'}],i=>i.total>=3)}<div class="legend" style="margin-top:8px;padding-top:8px"><span><i style="background:var(--bad)"></i>Delayed</span><span><i style="background:var(--warn)"></i>Attention</span><span><i style="background:var(--ok)"></i>On track</span></div></div></section>
+  <section class="card"><header><h2><span class="dot" style="background:var(--soc)"></span>Ongoing proposals per manager</h2></header><div class="body">${workloadBars(propLoad,[{k:'eoi',c:'var(--soc)',l:'EOI'},{k:'rfp',c:'var(--eng)',l:'RFP'}],i=>i.total>=2)}<div class="legend" style="margin-top:8px;padding-top:8px"><span><i style="background:var(--soc)"></i>EOI</span><span><i style="background:var(--eng)"></i>RFP</span></div></div></section>
+ </div>
+ <section class="card"><header><h2>Combined load by manager</h2><span class="sub">projects + active bids</span></header><div class="body">
+  ${rows.map(r=>`<div class="wlrow"><div class="wlname">${r.m}<span class="cap">${r.ps.length} proj · ${r.qs.length} bids</span></div><div class="wltrack" style="width:${Math.max(r.load/Math.max(...rows.map(x=>x.load))*100,8)}%"><span style="flex:1;background:${r.load>=4?'var(--bad)':r.load>=3?'var(--warn)':'var(--brand)'}">${r.load}</span></div><span class="wlflag" style="background:${r.load>=4?'var(--bad-bg)':'var(--ok-bg)'};color:${r.load>=4?'var(--bad)':'var(--ok)'}">${r.load>=4?'Overloaded':'OK'}</span></div>`).join('')}
+ </div></section>`;
+}
+
+/* ============================ ROUTER ============================ */
+function setView(v,param){
+ const navMap={dashboard:'dashboard',proposals:'proposals',proposalDetail:'proposals',projects:'projects',projectDetail:'projects',workload:'workload',risks:'risks'};
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===navMap[v]));
+ closeDrawer();document.getElementById('rail').classList.remove('open');window.scrollTo(0,0);
+ ({dashboard:renderDashboard,proposals:renderProposals,projects:renderProjects,workload:renderWorkload,risks:renderRisks,projectDetail:()=>renderProjectDetail(param),proposalDetail:()=>renderProposalDetail(param)}[v])();
+}
+document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+renderDashboard();
+</script>
+</body>
+</html>
